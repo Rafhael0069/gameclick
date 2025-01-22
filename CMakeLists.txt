@@ -35,10 +35,13 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(gameclick gameclick.c )
+add_executable(gameclick gameclick.c matrix_control.c)
 
 pico_set_program_name(gameclick "gameclick")
 pico_set_program_version(gameclick "0.1")
+
+# Generate PIO header
+pico_generate_pio_header(${CMAKE_PROJECT_NAME} ${CMAKE_CURRENT_LIST_DIR}/ws2818b.pio)
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(gameclick 0)
@@ -55,7 +58,8 @@ target_include_directories(gameclick PRIVATE
 
 # Add any user requested libraries
 target_link_libraries(gameclick 
-        
+        hardware_pio
+        hardware_clocks
         )
 
 pico_add_extra_outputs(gameclick)
