@@ -94,14 +94,18 @@ int main() {
 
         // Loop principal do jogo
         while (!showing_x) {
-            if (current_direction == 0) {
-                // Mostra seta para a esquerda em verde
-                updateMatrix(left_arrow, 0, 128, 0);
+            // Verifica se o botão A ou B está pressionado
+            if (gpio_get(BUTTON_A) == 0 || gpio_get(BUTTON_B) == 0) {
+                updateMatrix(x_pattern, 0, 0, 0);  // Apaga a matriz de LEDs como feedback
             } else {
-                // Mostra seta para a direita em verde
-                updateMatrix(right_arrow, 0, 128, 0);
+                // Exibe a seta correspondente à direção
+                if (current_direction == 0) {
+                    updateMatrix(left_arrow, 0, 128, 0);
+                } else {
+                    updateMatrix(right_arrow, 0, 128, 0);
+                }
             }
-            sleep_ms(100); // Pequeno atraso para evitar alta carga na CPU
+            sleep_ms(100);  // Reduz a taxa de atualização para economizar processamento
         }
         
         const char *message[] = {

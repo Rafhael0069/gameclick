@@ -41,9 +41,9 @@ int number_3[MATRIX_SIZE][MATRIX_SIZE] = {
 
 int number_2[MATRIX_SIZE][MATRIX_SIZE] = {
     {0, 1, 1, 1, 0},
-    {0, 0, 0, 1, 0},
-    {0, 1, 1, 1, 0},
     {0, 1, 0, 0, 0},
+    {0, 1, 1, 1, 0},
+    {0, 0, 0, 1, 0},
     {0, 1, 1, 1, 0}
 };
 
