@@ -35,7 +35,11 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(gameclick gameclick.c matrix_control.c)
+add_executable(gameclick 
+            gameclick.c 
+            matrix_control.c
+            oled_display.c 
+            inc/ssd1306_i2c.c)
 
 pico_set_program_name(gameclick "gameclick")
 pico_set_program_version(gameclick "0.1")
@@ -60,6 +64,7 @@ target_include_directories(gameclick PRIVATE
 target_link_libraries(gameclick 
         hardware_pio
         hardware_clocks
+        hardware_i2c
         )
 
 pico_add_extra_outputs(gameclick)
