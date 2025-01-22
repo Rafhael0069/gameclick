@@ -1,42 +1,17 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "matrix_control.h"
-#include <stdlib.h>
-#include <time.h>
+#include "matrices.h"
 
 #define BUTTON_A 5
 #define BUTTON_B 6
 
-// Matriz representando uma seta para a esquerda
-int left_arrow[MATRIX_SIZE][MATRIX_SIZE] = {
-    {0, 0, 1, 0, 0},
-    {0, 1, 0, 0, 0},
-    {1, 1, 1, 1, 1},
-    {0, 1, 0, 0, 0},
-    {0, 0, 1, 0, 0}
-};
-
-// Matriz representando uma seta para a direita
-int right_arrow[MATRIX_SIZE][MATRIX_SIZE] = {
-    {0, 0, 1, 0, 0},
-    {0, 0, 0, 1, 0},
-    {1, 1, 1, 1, 1},
-    {0, 0, 0, 1, 0},
-    {0, 0, 1, 0, 0}
-};
-
-// Matriz representando um "X"
-int x_pattern[MATRIX_SIZE][MATRIX_SIZE] = {
-    {1, 0, 0, 0, 1},
-    {0, 1, 0, 1, 0},
-    {0, 0, 1, 0, 0},
-    {0, 1, 0, 1, 0},
-    {1, 0, 0, 0, 1}
-};
-
 volatile int current_direction = 0;
 volatile bool showing_x = false;
+volatile bool restart_cycle = false;
 
 void init_buttons() {
     gpio_init(BUTTON_A);
@@ -50,7 +25,20 @@ void init_buttons() {
 
 // Função que decide a próxima direção aleatoriamente
 void decide_next_direction() {
-    current_direction = rand() % 2;}
+    current_direction = rand() % 2;
+}
+
+// Função para exibir a contagem regressiva
+void show_countdown() {
+    updateMatrix(number_3, 0, 0, 128); // Exibe o número 3 em amarelo
+    sleep_ms(1000);
+
+    updateMatrix(number_2, 0, 0, 128); // Exibe o número 2 em amarelo
+    sleep_ms(1000);
+
+    updateMatrix(number_1, 0, 0, 128); // Exibe o número 1 em amarelo
+    sleep_ms(1000);
+}
 
 // Função para lidar com os botões (interrupção)
 void button_callback(uint gpio, uint32_t events) {
@@ -58,7 +46,7 @@ void button_callback(uint gpio, uint32_t events) {
         // O "X" está sendo exibido, verifica se os dois botões foram pressionados
         if (gpio_get(BUTTON_A) == 0 && gpio_get(BUTTON_B) == 0) {
             showing_x = false;
-            decide_next_direction();
+            restart_cycle = true;
         }
     } else if (gpio == BUTTON_A && current_direction == 0 || gpio == BUTTON_B && current_direction == 1 ) {
         // Botão correto pressionado
@@ -76,24 +64,40 @@ int main() {
 
     init_buttons();
 
+    // Configura as interrupções para os botões
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
     srand(time(NULL));
-    decide_next_direction();
 
     while (1) {
-        if (showing_x) {
-            // Mostra o "X" em vermelho
-            updateMatrix(x_pattern, 128, 0, 0);
-        } else if (current_direction == 0) {
-            // Mostra seta para a esquerda em verde
-            updateMatrix(left_arrow, 0, 128, 0);
-        } else {
-            // Mostra seta para a direita em verde
-            updateMatrix(right_arrow, 0, 128, 0);
+        // Mostra a contagem regressiva no início do ciclo
+        show_countdown();
+        decide_next_direction();
+
+        // Loop principal do jogo
+        while (!showing_x) {
+            if (current_direction == 0) {
+                // Mostra seta para a esquerda em verde
+                updateMatrix(left_arrow, 0, 128, 0);
+            } else {
+                // Mostra seta para a direita em verde
+                updateMatrix(right_arrow, 0, 128, 0);
+            }
+            sleep_ms(100); // Pequeno atraso para evitar alta carga na CPU
         }
-        sleep_ms(100); 
+
+        // Mostra o "X" em vermelho enquanto está no estado de erro
+        while (showing_x) {
+            updateMatrix(x_pattern, 128, 0, 0);
+            sleep_ms(100);
+        }
+
+        // Aguarda reinício do ciclo
+        while (!restart_cycle) {
+            sleep_ms(100);
+        }
+        restart_cycle = false;
     }
 
     return 0;
