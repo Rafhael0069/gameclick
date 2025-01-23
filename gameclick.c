@@ -11,6 +11,10 @@
 #define BUTTON_B 6
 
 #define DEBOUNCE_TIME_MS 200
+#define INITIAL_REACTION_TIME_MS 1500
+#define MIN_REACTION_TIME_MS 500
+#define TIME_DECREASE_INTERVAL_SEC 5
+#define TIME_DECREASE_STEP_MS 100
 
 volatile int current_direction = 0;
 volatile bool showing_x = false;
@@ -18,8 +22,12 @@ volatile bool restart_cycle = false;
 volatile uint32_t last_button_press_time = 0;
 
 volatile bool stop_timer = false; // Flag para parar o timer
-uint64_t start_time = 0; // Tempo absoluto inicial
-float elapsed_time = 0.0; // Tempo decorrido sem erros
+uint64_t start_time = 0;          // Tempo absoluto inicial do jogo
+uint64_t reaction_start_time = 0; // Tempo absoluto para controlar o tempo de reacao
+float elapsed_time = 0.0;         // Tempo decorrido sem erros
+
+int current_reaction_time_ms = INITIAL_REACTION_TIME_MS; // Tempo disponível para reação
+uint64_t last_time_decrease_check = 0; // Para rastrear quando diminuir o tempo de reação
 
 void init_buttons() {
     gpio_init(BUTTON_A);
@@ -34,7 +42,8 @@ void init_buttons() {
 // Função que decide a próxima direção aleatoriamente
 void decide_next_direction() {
     current_direction = rand() % 2;
-    }
+    reaction_start_time = to_ms_since_boot(get_absolute_time()); // Marca o início do tempo de reação
+}
 
 // Função que exibe a contagem regressiva na matriz de led
 void show_countdown() {
@@ -42,7 +51,6 @@ void show_countdown() {
     for (int i = 3; i > 0; i--) {
         const char *message[] = { "Prepare-se!" };
         oled_display_message(message, 1);
-
         updateMatrix(i == 3 ? number_3 : i == 2 ? number_2 : number_1, 0, 0, 128);
         sleep_ms(1000);
     }
@@ -80,6 +88,27 @@ void display_timer(float time_seconds) {
     oled_display_message(message, 1);
 }
 
+//Função para verificar o tempo de reação do jogador
+void check_reaction_time() {
+    uint32_t current_time = to_ms_since_boot(get_absolute_time());
+    if (current_time - reaction_start_time > current_reaction_time_ms) {
+        // Tempo de reação expirado
+        showing_x = true;
+        stop_timer = true;
+    }
+}
+
+//Função para ajustar o tempo para a reação do jogador
+void adjust_reaction_time() {
+    uint64_t current_time = to_ms_since_boot(get_absolute_time());
+    if (current_time - last_time_decrease_check >= TIME_DECREASE_INTERVAL_SEC * 1000) {
+        if (current_reaction_time_ms > MIN_REACTION_TIME_MS) {
+            current_reaction_time_ms -= TIME_DECREASE_STEP_MS;
+        }
+        last_time_decrease_check = current_time;
+    }
+}
+
 int main() {
     stdio_init_all();
 
@@ -107,6 +136,7 @@ int main() {
         // Inicia o timer
         start_time = get_absolute_time();
         stop_timer = false;
+        last_time_decrease_check = to_ms_since_boot(get_absolute_time());
 
         // Loop principal do jogo
         while (!showing_x) {
@@ -117,6 +147,12 @@ int main() {
 
             // Exibe o tempo no OLED
             display_timer(elapsed_time);
+
+            // Verifica se o usuário reagiu a tempo
+            check_reaction_time();
+
+            // Ajusta o tempo de reação dinamicamente
+            adjust_reaction_time();
 
             // Verifica se o botão A ou B está pressionado
             if (gpio_get(BUTTON_A) == 0 || gpio_get(BUTTON_B) == 0) {
