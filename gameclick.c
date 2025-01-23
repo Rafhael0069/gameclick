@@ -22,7 +22,7 @@ volatile bool showing_x = false;              // Flag para indicar que o "X" est
 volatile bool restart_cycle = false;          // Flag para reiniciar o ciclo do jogo
 volatile uint32_t last_button_press_time = 0; // Armazena o último tempo de acionamento do botão
 
-const int mediun_brightness = 128;         // Brilho médio para LEDs da matriz
+const int mediun_brightness = 130;         // Brilho médio para LEDs da matriz
 
 volatile bool game_started = false;        // Flag para indicar o início do jogo
 volatile bool stop_timer = false;          // Flag para pausar o temporizador
