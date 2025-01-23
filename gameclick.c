@@ -21,7 +21,7 @@ volatile bool showing_x = false;
 volatile bool restart_cycle = false;
 volatile uint32_t last_button_press_time = 0;
 
-const int medion_brightness = 128;
+const int mediun_brightness = 130;
 
 volatile bool game_started = false; // Flag para indicar início do jogo
 volatile bool stop_timer = false; // Flag para parar o timer
@@ -54,7 +54,7 @@ void show_countdown() {
     for (int i = 3; i > 0; i--) {
         const char *message[] = { "Prepare-se!" };
         oled_display_message(message, 1);
-        updateMatrix(i == 3 ? number_3 : i == 2 ? number_2 : number_1, 0, 0, 128);
+        updateMatrix(i == 3 ? number_3 : i == 2 ? number_2 : number_1, 0, 0, mediun_brightness);
         sleep_ms(1000);
     }
 }
@@ -122,10 +122,10 @@ void adjust_reaction_time() {
 void show_initial_screen() {
     const char *welcome_message[] = { "Bem-vindo!", "Pressione","A e B", "para iniciar" };
     while (!game_started) {
-        updateMatrix(left_arrow, 0, medion_brightness, 0); // Mostra seta para a esquerda
+        updateMatrix(left_arrow, 0, mediun_brightness, 0); // Mostra seta para a esquerda
         oled_display_message(welcome_message, 4);
         sleep_ms(600);
-        updateMatrix(right_arrow, 0, medion_brightness, 0); // Mostra seta para a direita
+        updateMatrix(right_arrow, 0, mediun_brightness, 0); // Mostra seta para a direita
         sleep_ms(600);
     }
 }
@@ -180,9 +180,9 @@ int main() {
             } else {
                 // Exibe a seta correspondente à direção
                 if (current_direction == 0) {
-                    updateMatrix(left_arrow, 0, medion_brightness, 0);
+                    updateMatrix(left_arrow, 0, mediun_brightness, 0);
                 } else {
-                    updateMatrix(right_arrow, 0, medion_brightness, 0);
+                    updateMatrix(right_arrow, 0, mediun_brightness, 0);
                 }
             }
             sleep_ms(100);  // Reduz a taxa de atualização para economizar processamento
@@ -198,7 +198,7 @@ int main() {
         // Mostra o "X" em vermelho enquanto está no estado de erro
         bool show_message = true;
         while (showing_x) {
-            updateMatrix(x_pattern, medion_brightness, 0, 0);
+            updateMatrix(x_pattern, mediun_brightness, 0, 0);
             if (stop_timer) {
                 // Alterna entre o tempo e a mensagem final
                 display_timer(elapsed_time);
