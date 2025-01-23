@@ -17,6 +17,10 @@ volatile bool showing_x = false;
 volatile bool restart_cycle = false;
 volatile uint32_t last_button_press_time = 0;
 
+volatile bool stop_timer = false; // Flag para parar o timer
+uint64_t start_time = 0; // Tempo absoluto inicial
+float elapsed_time = 0.0; // Tempo decorrido sem erros
+
 void init_buttons() {
     gpio_init(BUTTON_A);
     gpio_set_dir(BUTTON_A, GPIO_IN);
@@ -65,7 +69,15 @@ void button_callback(uint gpio, uint32_t events) {
     } else {
         // Botão incorreto pressionado
         showing_x = true;
+        stop_timer = true;
     }
+}
+
+void display_timer(float time_seconds) {
+    char buffer[16];
+    snprintf(buffer, sizeof(buffer), "Tempo: %.1fs", time_seconds);
+    const char *message[] = { buffer };
+    oled_display_message(message, 1);
 }
 
 int main() {
@@ -92,8 +104,20 @@ int main() {
         show_countdown();
         decide_next_direction();
 
+        // Inicia o timer
+        start_time = get_absolute_time();
+        stop_timer = false;
+
         // Loop principal do jogo
         while (!showing_x) {
+
+            // Calcula o tempo decorrido
+            absolute_time_t current_time = get_absolute_time();
+            elapsed_time = (float)absolute_time_diff_us(start_time, current_time) / 1e6;
+
+            // Exibe o tempo no OLED
+            display_timer(elapsed_time);
+
             // Verifica se o botão A ou B está pressionado
             if (gpio_get(BUTTON_A) == 0 || gpio_get(BUTTON_B) == 0) {
                 updateMatrix(x_pattern, 0, 0, 0);  // Apaga a matriz de LEDs como feedback
@@ -107,19 +131,25 @@ int main() {
             }
             sleep_ms(100);  // Reduz a taxa de atualização para economizar processamento
         }
-        
-        const char *message[] = {
-            "Pressione", 
-            "A e B", 
-            "Para tentar", 
-            "novamente"
-        };
-        oled_display_message(message, 4);
+
+        const char *end_message[] = {
+                    "Pressione", 
+                    "A e B", 
+                    "Para tentar", 
+                    "novamente"
+                };
 
         // Mostra o "X" em vermelho enquanto está no estado de erro
+        bool show_message = true;
         while (showing_x) {
             updateMatrix(x_pattern, 128, 0, 0);
-            sleep_ms(100);
+            if (stop_timer) {
+                // Alterna entre o tempo e a mensagem final
+                display_timer(elapsed_time);
+                sleep_ms(2000);
+                oled_display_message(end_message, 4);
+                sleep_ms(1000);
+            }
         }
 
         // Aguarda reinício do ciclo
