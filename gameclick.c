@@ -21,6 +21,9 @@ volatile bool showing_x = false;
 volatile bool restart_cycle = false;
 volatile uint32_t last_button_press_time = 0;
 
+const int medion_brightness = 128;
+
+volatile bool game_started = false; // Flag para indicar início do jogo
 volatile bool stop_timer = false; // Flag para parar o timer
 uint64_t start_time = 0;          // Tempo absoluto inicial do jogo
 uint64_t reaction_start_time = 0; // Tempo absoluto para controlar o tempo de reacao
@@ -65,10 +68,15 @@ void button_callback(uint gpio, uint32_t events) {
     }
     last_button_press_time = current_time;
 
-    if (showing_x) {
+    if (!game_started) {
+        if (gpio_get(BUTTON_A) == 0 && gpio_get(BUTTON_B) == 0) {
+            game_started = true;
+        }
+    } else if (showing_x) {
         if (gpio_get(BUTTON_A) == 0 && gpio_get(BUTTON_B) == 0) {
             showing_x = false;
             restart_cycle = true;
+            game_started = true;
         }
     } else if ((gpio == BUTTON_A && current_direction == 0) || 
                (gpio == BUTTON_B && current_direction == 1)) {
@@ -81,6 +89,7 @@ void button_callback(uint gpio, uint32_t events) {
     }
 }
 
+//Função para exibir o tempo de jogo
 void display_timer(float time_seconds) {
     char buffer[16];
     snprintf(buffer, sizeof(buffer), "Tempo: %.1fs", time_seconds);
@@ -109,6 +118,18 @@ void adjust_reaction_time() {
     }
 }
 
+//Função para mostrar a exibição inicial do jogo
+void show_initial_screen() {
+    const char *welcome_message[] = { "Bem-vindo!", "Pressione","A e B", "para iniciar" };
+    while (!game_started) {
+        updateMatrix(left_arrow, 0, medion_brightness, 0); // Mostra seta para a esquerda
+        oled_display_message(welcome_message, 4);
+        sleep_ms(600);
+        updateMatrix(right_arrow, 0, medion_brightness, 0); // Mostra seta para a direita
+        sleep_ms(600);
+    }
+}
+
 int main() {
     stdio_init_all();
 
@@ -123,9 +144,8 @@ int main() {
 
     srand(time(NULL));
     
-    // Mensagem inicial
-    const char *message[] = { "Bem-vindos!" };
-    oled_display_message(message, 1);
+    // Exibe a tela inicial
+    show_initial_screen();
 
     while (1) {
 
@@ -160,9 +180,9 @@ int main() {
             } else {
                 // Exibe a seta correspondente à direção
                 if (current_direction == 0) {
-                    updateMatrix(left_arrow, 0, 128, 0);
+                    updateMatrix(left_arrow, 0, medion_brightness, 0);
                 } else {
-                    updateMatrix(right_arrow, 0, 128, 0);
+                    updateMatrix(right_arrow, 0, medion_brightness, 0);
                 }
             }
             sleep_ms(100);  // Reduz a taxa de atualização para economizar processamento
@@ -171,14 +191,14 @@ int main() {
         const char *end_message[] = {
                     "Pressione", 
                     "A e B", 
-                    "Para tentar", 
-                    "novamente"
+                    "Para", 
+                    "reiniciar"
                 };
 
         // Mostra o "X" em vermelho enquanto está no estado de erro
         bool show_message = true;
         while (showing_x) {
-            updateMatrix(x_pattern, 128, 0, 0);
+            updateMatrix(x_pattern, medion_brightness, 0, 0);
             if (stop_timer) {
                 // Alterna entre o tempo e a mensagem final
                 display_timer(elapsed_time);

@@ -7,14 +7,21 @@ Este projeto consiste em um jogo simples de reflexos e coordenação motora dese
 O objetivo é pressionar o botão correto (A ou B) de acordo com a direção exibida na matriz de LEDs o mais rápido possível, enquanto um temporizador registra o tempo total sem erros. Caso um botão incorreto seja pressionado, o jogo para e exibe o tempo decorrido alternando com uma mensagem final. É possível reiniciar o jogo pressionando ambos os botões simultaneamente.
 
 ## Funcionalidades
+1. **Tela Inicial:**
+   - Alterna entre setas na matriz de LEDs enquanto exibe uma mensagem no display OLED.
+   - O jogo só inicia após o usuário pressionar os botões A e B simultaneamente.
 
-- Exibição de contagem regressiva inicial na matriz de LEDs.
-- Direções (setas) exibidas na matriz para indicar qual botão pressionar.
-- Timer absoluto exibido no display OLED com 1 casa decimal de precisão.
-- Feedback visual com a matriz de LEDs sendo apagada enquanto os botões são pressionados.
-- Indicação de erro com o padrão "X" na matriz de LEDs e a pausa do timer.
-- Alternância de mensagens no display OLED após um erro, incluindo o tempo final sem erros.
-- Reinício imediato do jogo ao pressionar os botões A e B simultaneamente.
+2. **Fluxo Principal do Jogo:**
+   - Após a tela inicial, o jogo começa com uma contagem regressiva exibida na matriz de LEDs.
+   - O jogador deve pressionar o botão correspondente à direção da seta exibida (esquerda ou direita) dentro de um limite de tempo.
+
+3. **Controle de Tempo:**
+   - O tempo disponível para reação começa em 1,5 segundos e é reduzido em 100 milissegundos a cada 5 segundos, até um limite mínimo de 0,5 segundos.
+   - Se o jogador pressionar o botão incorreto ou não reagir dentro do tempo, um "X" vermelho é exibido na matriz de LEDs, indicando erro.
+
+4. **Feedback Visual e Mensagens:**
+   - O display OLED exibe mensagens como "Prepare-se!", o tempo decorrido e instruções para reiniciar o jogo após um erro.
+   - A matriz de LEDs fornece feedback visual claro durante todo o jogo.
 
 ## Ferramentas e Tecnologias Utilizadas
 
@@ -25,23 +32,26 @@ O objetivo é pressionar o botão correto (A ou B) de acordo com a direção exi
   - Display OLED para mensagens e timer.
   - Botões de entrada (GPIOs).
 - **Bibliotecas**:
-  - `pico/stdlib` para controle dos GPIOs e temporização.
-  - Biblioteca personalizada para controle da matriz de LEDs.
-  - Biblioteca para exibição de mensagens no display OLED.
+  - **SDK do Raspberry Pi Pico**: Para acesso às funções de GPIO, temporização e outras funcionalidades da placa.
+- **Bibliotecas Personalizadas**:
+  - `matrix_control.h`: Controle da matriz de LEDs RGB.
+  - `matrices.h`: Padrões e formas exibidas na matriz (setas, números, "X", etc.).
+  - `oled_display.h`: Controle do display OLED.
+- **CMake**: Para configuração e build do projeto.
 
-## Como Funciona o Jogo
-
-1. Ao iniciar, o jogo exibe uma contagem regressiva de 3 segundos na matriz de LEDs.
-2. Uma seta (← ou →) é exibida, indicando qual botão pressionar.
-3. O jogador deve pressionar o botão correspondente antes que a direção mude.
-4. O tempo é registrado e exibido no display OLED.
-5. Caso um botão incorreto seja pressionado, o jogo pausa e exibe o tempo decorrido até o erro.
-6. O jogador pode reiniciar pressionando os botões A e B simultaneamente.
+## Como Jogar
+1. Conecte o hardware conforme especificado.
+2. Compile e carregue o código na Raspberry Pi Pico W.
+3. Após a inicialização, a matriz exibirá setas alternadas e o display mostrará uma mensagem.
+4. Pressione os botões A e B simultaneamente para iniciar o jogo.
+5. Pressione o botão correto (A para esquerda ou B para direita) dentro do tempo limite indicado.
+6. Se errar ou demorar demais, reinicie pressionando os dois botões novamente.
 
 ## Aprendizados e Desafios
 
 Durante o desenvolvimento deste projeto, foram explorados conceitos fundamentais de sistemas embarcados, como:
 
+- Programação de sistemas embarcados em C.
 - Configuração e uso de GPIOs para leitura de botões e controle de periféricos.
 - Implementação de debouncing de botões via software.
 - Controle de uma matriz de LEDs RGB e exibição de padrões dinâmicos.
@@ -70,6 +80,9 @@ Durante o desenvolvimento deste projeto, foram explorados conceitos fundamentais
 - Implementação de sons para feedback auditivo.
 - Inclusão de análise de desempenho com pontuação baseada no tempo de reação.
 - Integração com um aplicativo para registro de pontuações via Bluetooth.
+
+## Autor
+Desenvolvido por [Rafhael Gaspar da silva](https://github.com/Rafhael0069).
 
 ## Licença
 
