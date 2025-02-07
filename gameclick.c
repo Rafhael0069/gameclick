@@ -22,7 +22,8 @@ volatile bool showing_x = false;              // Flag para indicar que o "X" est
 volatile bool restart_cycle = false;          // Flag para reiniciar o ciclo do jogo
 volatile uint32_t last_button_press_time = 0; // Armazena o último tempo de acionamento do botão
 
-const int mediun_brightness = 130;         // Brilho médio para LEDs da matriz
+const int brightness = 160;         // Brilho para LEDs da matriz
+// const int brightness = 200;         // Brilho para LEDs da matriz
 
 volatile bool game_started = false;        // Flag para indicar o início do jogo
 volatile bool stop_timer = false;          // Flag para pausar o temporizador
@@ -56,7 +57,7 @@ void show_countdown() {
         const char *message[] = { "Prepare-se!" };
         oled_display_message(message, 1); // Mostra mensagem no display OLED
         // Mostra o número correspondente na matriz de LEDs
-        updateMatrix(i == 3 ? number_3 : i == 2 ? number_2 : number_1, 0, 0, mediun_brightness);
+        updateMatrix(i == 3 ? number_3 : i == 2 ? number_2 : number_1, 0, 0, 255);
         sleep_ms(1000); // Aguarda 1 segundo
     }
 }
@@ -127,10 +128,10 @@ void adjust_reaction_time() {
 void show_initial_screen() {
     const char *welcome_message[] = { "Bem-vindo!", "Pressione", "A e B", "para iniciar" };
     while (!game_started) {
-        updateMatrix(left_arrow, 0, mediun_brightness, 0); // Seta para a esquerda
+        updateMatrix(left_arrow, 0, 255, 0); // Seta para a esquerda
         oled_display_message(welcome_message, 4); // Mostra mensagem de boas-vindas
         sleep_ms(500);
-        updateMatrix(right_arrow, 0, mediun_brightness, 0); // Seta para a direita
+        updateMatrix(right_arrow, 0, 255, 0); // Seta para a direita
         sleep_ms(500);
     }
 }
@@ -139,15 +140,16 @@ int main() {
     stdio_init_all(); // Inicializa a entrada e saída padrão
 
     // Configurações iniciais
-    npInit(LED_PIN);  // Inicializa a matriz de LEDs
-    oled_init();      // Inicializa o display OLED
-    init_buttons();   // Configura os botões
+    npInit(LED_PIN);            // Inicializa a matriz de LEDs
+    oled_init();                // Inicializa o display OLED
+    init_buttons();             // Configura os botões
+    setBrightness(brightness);  // Define o brilho
 
     // Configura interrupções nos botões
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
-    srand(time(NULL)); // Inicializa o gerador de números aleatórios
+    srand(time(NULL));          // Inicializa o gerador de números aleatórios
 
     // Exibe a tela inicial
     show_initial_screen();
@@ -167,23 +169,22 @@ int main() {
             elapsed_time = (float)absolute_time_diff_us(start_time, current_time) / 1e6; // Tempo decorrido
 
             display_timer(elapsed_time);  // Exibe o tempo no OLED
-            check_reaction_time();       // Verifica o tempo de reação
-            adjust_reaction_time();      // Ajusta dinamicamente o tempo de reação
+            check_reaction_time();        // Verifica o tempo de reação
+            adjust_reaction_time();       // Ajusta dinamicamente o tempo de reação
 
             // Atualiza matriz de LEDs com a direção correta
             if (gpio_get(BUTTON_A) == 0 || gpio_get(BUTTON_B) == 0) {
                 updateMatrix(x_pattern, 0, 0, 0); // Apaga matriz de LEDs como feedback
             } else {
-                updateMatrix(current_direction == 0 ? left_arrow : right_arrow, 0, mediun_brightness, 0);
+                updateMatrix(current_direction == 0 ? left_arrow : right_arrow, 0, 255, 0);
             }
-
             sleep_ms(100); // Reduz a taxa de atualização
         }
 
         // Exibe "X" e mensagem final
         const char *end_message[] = { "Pressione", "A e B", "Para", "reiniciar" };
         while (showing_x) {
-            updateMatrix(x_pattern, mediun_brightness, 0, 0); // Mostra "X" em vermelho
+            updateMatrix(x_pattern, 255, 0, 0); // Mostra "X" em vermelho
             if (stop_timer) {
                 display_timer(elapsed_time);
                 sleep_ms(2000);

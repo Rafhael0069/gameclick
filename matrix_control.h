@@ -20,6 +20,7 @@ void npInit(uint pin);
 void npSetLED(const uint index, const uint8_t r, const uint8_t g, const uint8_t b);
 void npClear();
 void npWrite();
+void setBrightness(uint8_t brightness);
 void updateMatrix(int matrix[MATRIX_SIZE][MATRIX_SIZE], uint8_t r, uint8_t g, uint8_t b);
 
 #endif // LED_MATRIX_H

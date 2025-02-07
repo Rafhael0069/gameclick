@@ -12,6 +12,9 @@ npLED_t leds[LED_COUNT];
 PIO np_pio;
 uint sm;
 
+// Variáveis para controle de brilho com PWM
+uint8_t current_brightness = 255;  // Brilho máximo por padrão (0-255)
+
 /**
  * Inicializa a máquina PIO para controle da matriz de LEDs.
  */
@@ -36,12 +39,26 @@ void npInit(uint pin) {
 }
 
 /**
- * Atribui uma cor RGB a um LED.
+ * Ajusta o brilho global da matriz de LEDs.
+ */
+void setBrightness(uint8_t brightness) {
+  current_brightness = brightness;  // Atualiza o valor de brilho global
+}
+
+/**
+ * Aplica o brilho atual a uma cor RGB.
+ */
+uint8_t applyBrightness(uint8_t color) {
+  return (color * current_brightness)  / 255;  // Ajusta a cor com base no brilho
+}
+
+/**
+ * Atribui uma cor RGB a um LED, aplicando o brilho.
  */
 void npSetLED(const uint index, const uint8_t r, const uint8_t g, const uint8_t b) {
-  leds[index].R = r;
-  leds[index].G = g;
-  leds[index].B = b;
+  leds[index].R = applyBrightness(r);
+  leds[index].G = applyBrightness(g);
+  leds[index].B = applyBrightness(b);
 }
 
 /**
