@@ -10,7 +10,7 @@
 #define BUTTON_A 5     // Definição do pino para o botão A
 #define BUTTON_B 6     // Definição do pino para o botão B
 
-#define DEBOUNCE_TIME_MS 200          // Tempo para evitar bouncing nos botões
+#define DEBOUNCE_TIME_MS 100          // Tempo para evitar bouncing nos botões
 #define INITIAL_REACTION_TIME_MS 1500 // Tempo inicial de reação em milissegundos
 #define MIN_REACTION_TIME_MS 500      // Tempo mínimo de reação permitido
 #define TIME_DECREASE_INTERVAL_SEC 5  // Intervalo para diminuir o tempo de reação (em segundos)
@@ -22,8 +22,8 @@ volatile bool showing_x = false;              // Flag para indicar que o "X" est
 volatile bool restart_cycle = false;          // Flag para reiniciar o ciclo do jogo
 volatile uint32_t last_button_press_time = 0; // Armazena o último tempo de acionamento do botão
 
-const int brightness = 160;         // Brilho para LEDs da matriz
-// const int brightness = 200;         // Brilho para LEDs da matriz
+const int brightness = 160;         // Brilho medio para os LEDs da matriz
+// const int brightness = 200;         // Brilho alto para os LEDs da matriz
 
 volatile bool game_started = false;        // Flag para indicar o início do jogo
 volatile bool stop_timer = false;          // Flag para pausar o temporizador
@@ -33,6 +33,7 @@ float elapsed_time = 0.0;                  // Tempo decorrido no jogo
 
 int current_reaction_time_ms = INITIAL_REACTION_TIME_MS; // Tempo disponível para reação
 uint64_t last_time_decrease_check = 0;                   // Rastreamento da última diminuição do tempo de reação
+uint last_button_pressed = 0;                            // Variável global para armazenar o último botão pressionado
 
 // Inicializa os botões configurando como entrada com pull-up
 void init_buttons() {
@@ -67,10 +68,13 @@ void button_callback(uint gpio, uint32_t events) {
     uint32_t current_time = to_ms_since_boot(get_absolute_time());
     
     // Ignora eventos próximos (bouncing) com base no tempo configurado
-    if (current_time - last_button_press_time < DEBOUNCE_TIME_MS) {
+    if (gpio == last_button_pressed && (current_time - last_button_press_time < DEBOUNCE_TIME_MS)) {
         return;
     }
+
+    // Atualiza o tempo e o último botão pressionado
     last_button_press_time = current_time;
+    last_button_pressed = gpio;
 
     if (!game_started) {
         // Início do jogo: ambos os botões precisam ser pressionados
