@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "inc/ssd1306.h"
 
-// Função genérica para exibir mensagens no OLED
+// Função genérica para exibir mensagens no OLED.
 void oled_display_message(const char *messages[], size_t line_count);
 
 void oled_init();
