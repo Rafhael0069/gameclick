@@ -38,7 +38,9 @@ pico_sdk_init()
 add_executable(gameclick 
             gameclick.c 
             matrix_control.c
-            oled_display.c 
+            oled_display.c
+            buzzer.c
+            sounds.c 
             inc/ssd1306_i2c.c)
 
 pico_set_program_name(gameclick "gameclick")
@@ -53,7 +55,9 @@ pico_enable_stdio_usb(gameclick 1)
 
 # Add the standard library to the build
 target_link_libraries(gameclick
-        pico_stdlib)
+        pico_stdlib
+        hardware_pwm
+        hardware_clocks)
 
 # Add the standard include files to the build
 target_include_directories(gameclick PRIVATE
@@ -64,8 +68,7 @@ target_include_directories(gameclick PRIVATE
 target_link_libraries(gameclick 
         hardware_pio
         hardware_clocks
-        hardware_i2c
-        )
+        hardware_i2c)
 
 pico_add_extra_outputs(gameclick)
 

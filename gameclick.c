@@ -6,6 +6,8 @@
 #include "matrix_control.h"
 #include "matrices.h"
 #include "oled_display.h"
+#include "buzzer.h"
+#include "sounds.h"
 
 #define BUTTON_A 5     // Definição do pino para o botão A.
 #define BUTTON_B 6     // Definição do pino para o botão B.
@@ -15,6 +17,7 @@
 #define MIN_REACTION_TIME_MS 500      // Tempo mínimo de reação permitido.
 #define TIME_DECREASE_INTERVAL_SEC 5  // Intervalo para diminuir o tempo de reação (em segundos).
 #define TIME_DECREASE_STEP_MS 100     // Passo de diminuição do tempo de reação (em ms).
+#define X_DISPLAY_TIMEOUT_MS 10000    // Tempo máximo para exibir o 'X' antes de reiniciar (10 segundos).
 
 // Variáveis globais
 volatile int current_direction = 0;           // Direção atual: 0 (esquerda) ou 1 (direita).
@@ -33,7 +36,7 @@ float elapsed_time = 0.0;                  // Tempo decorrido no jogo.
 
 int current_reaction_time_ms = INITIAL_REACTION_TIME_MS; // Tempo disponível para reação.
 uint64_t last_time_decrease_check = 0;                   // Rastreamento da última diminuição do tempo de reação.
-uint last_button_pressed = 0;                            // Variável global para armazenar o último botão pressionado.
+volatile uint last_button_pressed = 0;                  // Variável global para armazenar o último botão pressionado.
 
 /**
  * Inicializa os botões configurando como entrada com pull-up.
@@ -66,14 +69,13 @@ void show_countdown() {
 
         // Mostra o número correspondente na matriz de LEDs.
         updateMatrix(i == 3 ? number_3 : i == 2 ? number_2 : number_1, 0, 0, 255);
+        play_music_once(button_confirm_notes, button_confirm_durations, button_confirm_length); // Toca som de notificação.
         sleep_ms(1000); // Aguarda 1 segundo.
     }
 }
 
 /**
  * Função chamada nas interrupções dos botões.
- * @param gpio: Pino GPIO que gerou a interrupção.
- * @param events: Evento que causou a interrupção.
  */
 void button_callback(uint gpio, uint32_t events) {
     uint32_t current_time = to_ms_since_boot(get_absolute_time());
@@ -90,8 +92,8 @@ void button_callback(uint gpio, uint32_t events) {
     if (!game_started) {
         // Início do jogo: ambos os botões precisam ser pressionados.
         if (gpio_get(BUTTON_A) == 0 && gpio_get(BUTTON_B) == 0) {
-            game_started = true;
-        }
+            game_started = true; 
+        } 
     } else if (showing_x) {
         // Reinício do jogo após erro.
         if (gpio_get(BUTTON_A) == 0 && gpio_get(BUTTON_B) == 0) {
@@ -112,7 +114,6 @@ void button_callback(uint gpio, uint32_t events) {
 
 /**
  * Exibe o tempo de jogo no display OLED.
- * @param time_seconds: Tempo decorrido em segundos.
  */
 void display_timer(float time_seconds) {
     char buffer[16];
@@ -164,22 +165,22 @@ int main() {
     stdio_init_all(); // Inicializa a entrada e saída padrão.
 
     // Configurações iniciais.
-    npInit(LED_PIN);            // Inicializa a matriz de LEDs.
-    oled_init();                // Inicializa o display OLED.
-    init_buttons();             // Configura os botões.
-    setBrightness(brightness);  // Define o brilho.
+    npInit(LED_PIN);             // Inicializa a matriz de LEDs.
+    oled_init();                 // Inicializa o display OLED.
+    init_buttons();              // Configura os botões.
+    setBrightness(brightness);   // Define o brilho.
+    pwm_init_buzzer(BUZZER_PIN); // Inicializa o PWM no pino do buzzer
 
     // Configura interrupções nos botões.
     gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &button_callback);
     gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &button_callback);
 
-    srand(time(NULL));          // Inicializa o gerador de números aleatórios.
+    srand(time(NULL));           // Inicializa o gerador de números aleatórios.
 
     // Exibe a tela inicial.
     show_initial_screen();
 
     while (1) {
-
         show_countdown();                 // Mostra contagem regressiva antes de iniciar o ciclo.
         decide_next_direction();          // Define a direção inicial.
         start_time = get_absolute_time(); // Marca o início do tempo do jogo.
@@ -207,8 +208,22 @@ int main() {
 
         // Exibe "X" e mensagem final.
         const char *end_message[] = { "Pressione", "A e B", "Para", "reiniciar" };
+        uint64_t x_display_start_time = to_ms_since_boot(get_absolute_time()); // Marca o início da exibição do 'X'.
+        bool played_sound = false;
         while (showing_x) {
             updateMatrix(x_pattern, 255, 0, 0); // Mostra "X" em vermelho.
+            if (!played_sound) {
+                play_music_once(button_error_notes, button_error_durations, button_error_length); // Toca som de erro.
+                played_sound = true;
+            }
+            // Verifica se o 'X' foi exibido por mais de 10 segundos.
+            if (to_ms_since_boot(get_absolute_time()) - x_display_start_time >= X_DISPLAY_TIMEOUT_MS) {
+                showing_x = false; // Para de exibir o 'X'.
+                game_started = false; // Reinicia o jogo.
+                show_initial_screen(); // Volta para a tela inicial.
+                break; // Sai do loop.
+            }
+
             if (stop_timer) {
                 display_timer(elapsed_time);
                 sleep_ms(2000);
