@@ -218,8 +218,8 @@ int main() {
             }
             // Verifica se o 'X' foi exibido por mais de 10 segundos.
             if (to_ms_since_boot(get_absolute_time()) - x_display_start_time >= X_DISPLAY_TIMEOUT_MS) {
-                showing_x = false; // Para de exibir o 'X'.
-                game_started = false; // Reinicia o jogo.
+                showing_x = false;     // Para de exibir o 'X'.
+                game_started = false;  // Reinicia o jogo.
                 show_initial_screen(); // Volta para a tela inicial.
                 break; // Sai do loop.
             }
